@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackout Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+      border-radius: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    }
+
+    header h1 {
+      font-size: 48px;
+      color: #ff4c4c;
+      text-shadow: 2px 2px 5px black;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      font-size: 18px;
+      color: #ccc;
+      text-shadow: 1px 1px 3px black;
+    }
+
+    canvas {
+      border: 3px solid white;
+      background-color: black;
+      display: block;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 20px white;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    button, select {
+      margin: 10px;
+      padding: 10px 25px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    button {
+      background: linear-gradient(45deg, #ff4c4c, #ff0000);
+      color: white;
+      box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+    }
+
+    button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 20px rgba(255, 0, 0, 0.6);
+    }
+
+    select {
+      background-color: #222;
+      color: white;
+      box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    select:hover {
+      transform: scale(1.05);
+    }
+
+    footer {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>BLACKOUT</h1>
+      <p class="subtitle">Tahan bola sekuat mungkin dan hancurkan semua balok!</p>
+    </header>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script src="canvas.js"></script>
+    
+    <div class="controls">
+      <button id="">Mulai Game</button>
+      <button id="">Pause Game</button>
+      <button id="">Reset Game</button>
+    </div>
+    <footer>
+      <p>Raih Kemenangan!</p>
+    </footer>
+  </div>
+</body>
+</html>
