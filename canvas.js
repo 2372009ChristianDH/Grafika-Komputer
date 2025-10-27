@@ -80,10 +80,83 @@ function translasi(titik_lama,jarak){
     return{x : x_baru,y : y_baru}
 }
 
+function floodFillStack(imageData, cnv, x, y, toFlood, color) {
+    var index = 4 * (Math.ceil(x) + (Math.ceil(y) * cnv.width));
+
+    var r1 = imageData.data[index];
+    var g1 = imageData.data[index + 1];
+    var b1 = imageData.data[index + 2];
+
+    var Stack = [];
+    Stack.push({ x: x, y: y });
+
+    while (Stack.length > 0) {
+        var points = Stack.pop();
+        var indexs = 4 * (points.x + (points.y * cnv.width));
+        var r1 = imageData.data[indexs];
+        var g1 = imageData.data[indexs + 1];
+        var b1 = imageData.data[indexs + 2];
+
+        if ((toFlood.r == r1 && toFlood.g == g1 && toFlood.b == b1)) {
+            imageData.data[indexs] = color.r;
+            imageData.data[indexs + 1] = color.g;
+            imageData.data[indexs + 2] = color.b;
+            imageData.data[indexs + 3] = 255;
+
+            Stack.push({ x: points.x + 1, y: points.y });
+            Stack.push({ x: points.x, y: points.y + 1 });
+            Stack.push({ x: points.x - 1, y: points.y });
+            Stack.push({ x: points.x, y: points.y - 1 });
+
+        }
+
+    }
+}
+
+cnv = document.getElementById("myCanvas");
+var ctx = cnv.getContext("2d");
+var imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
 
 //Logic reference
-function draw() {
-  // drawing code
+
+var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
+
+function drawBall(imageData, ball) {
+    lingkaranPolar(imageData, ball.x, ball.y, ball.radius, 0, 0, 255);
+    var toFlood = { r: 0, g: 0, b: 0 };
+    var color = { r: 0, g: 0, b: 255 };
+    floodFillStack(imageData, cnv, ball.x, ball.y, toFlood, color);
 }
-setInterval(draw, 10);
- 
+
+
+function draw(ball) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBall(imageData, ball);
+
+  if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+    ball.dx = -ball.dx;
+  }
+  if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
+    ball.dy = -ball.dy;
+  }
+
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+}
+
+// function startGame(){
+//     setInterval(draw, 10);  
+// }
+
+function gameLoop() {
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
+    imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
+
+    draw(ball);
+    drawBall(imageData, ball);
+
+    ctx.putImageData(imageData, 0, 0);
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
