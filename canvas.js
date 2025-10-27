@@ -81,7 +81,9 @@ function translasi(titik_lama,jarak){
 }
 
 
-
-
-
-
+//Logic reference
+function draw() {
+  // drawing code
+}
+setInterval(draw, 10);
+ 
