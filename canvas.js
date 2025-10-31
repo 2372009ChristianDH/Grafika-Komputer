@@ -168,9 +168,27 @@ function draw(ball) {
         ball.dy = -ball.dy;
     }
 
+    // code buat bola mantul ke paddel
+    // cek tabrakan dengan paddle
+    var paddleTop = centerY - 5;
+    var paddleBottom = centerY + 5;
+    var paddleLeft = centerX - 60;
+    var paddleRight = centerX + 60;
+
+    if (
+        ball.y + ball.radius >= paddleTop &&    // bola menyentuh atas paddle
+        ball.y + ball.radius <= paddleBottom && // masih dalam area paddle
+        ball.x >= paddleLeft && ball.x <= paddleRight
+    ) {
+        ball.dy = -Math.abs(ball.dy); // pantulkan ke atas
+        ball.y = paddleTop - ball.radius; // geser sedikit agar tidak tembus
+    }
+
+
     ball.x += ball.dx;
     ball.y += ball.dy;
 }
+
 
 function gameLoop() {
     ctx.clearRect(0, 0, cnv.width, cnv.height);
@@ -181,8 +199,31 @@ function gameLoop() {
     draw(ball);
     drawBall(imageData, ball);
 
+    point_array = [{ x: centerX - 60, y: centerY - 5 }, { x: centerX + 60, y: centerY - 5 }, { x: centerX + 60, y: centerY + 5 }, { x: centerX - 60, y: centerY + 5 }];
+    polygon(imageData, point_array, 255, 255, 0);
+
     ctx.putImageData(imageData, 0, 0);
     requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
+
+
+var centerX = cnv.width / 2;
+var centerY = cnv.height / 1.1;
+
+addEventListener('keydown', function (ev) {
+    var step =15;
+    var batasPadel = 60;
+
+    if (ev.key == 'a' || ev.key == 'ArrowLeft') {   
+        if (centerX - batasPadel - step >= 0) {
+            centerX -= step;
+        }
+    }
+    else if (ev.key == 'd' || ev.key == 'ArrowRight') {
+        if (centerX + batasPadel + step <= cnv.width) {
+            centerX += step;
+        }
+    }
+});
