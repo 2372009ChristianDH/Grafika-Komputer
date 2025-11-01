@@ -191,7 +191,7 @@ function draw(ball) {
                 resetBall(); // reset bola (masih bisa main meskipun nyawa 0)
             }
         } else {
-            // game berakhir ketika nyawa = 0
+            // game berakhir ketika nyawa =
             gameOver = true;
             setTimeout(() => alert("Game Over! Klik OK untuk mengulang."), 50);
             setTimeout(() => location.reload(), 500);
