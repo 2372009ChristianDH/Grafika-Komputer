@@ -12,7 +12,6 @@ function gambar_titik(imageData, x, y, r, g, b) {
 function dda_line(imageData, x1, y1, x2, y2, r, g, b) {
     var dx = x2 - x1;
     var dy = y2 - y1;
-
     if (Math.abs(dx) > Math.abs(dy)) {
         if (x2 > x1) {
             var y = y1;
@@ -67,37 +66,26 @@ function polygon(imageData, point_array, r, g, b) {
     dda_line(imageData, x1, y1, x2, y2, r, g, b);
 }
 
-function translasi(titik_lama, jarak) {
-    var x_baru = titik_lama.x + jarak.x;
-    var y_baru = titik_lama.y + jarak.y;
-    return { x: x_baru, y: y_baru };
-}
-
 function floodFillStack(imageData, cnv, x, y, toFlood, color) {
-    var index = 4 * (Math.ceil(x) + (Math.ceil(y) * cnv.width));
-    var r1 = imageData.data[index];
-    var g1 = imageData.data[index + 1];
-    var b1 = imageData.data[index + 2];
-
     var Stack = [];
     Stack.push({ x: x, y: y });
 
     while (Stack.length > 0) {
         var points = Stack.pop();
-        var indexs = 4 * (points.x + (points.y * cnv.width));
+        var indexs = 4 * (Math.ceil(points.x) + (Math.ceil(points.y) * cnv.width));
         var r1 = imageData.data[indexs];
         var g1 = imageData.data[indexs + 1];
         var b1 = imageData.data[indexs + 2];
 
-        if ((toFlood.r == r1 && toFlood.g == g1 && toFlood.b == b1)) {
+        if (r1 === toFlood.r && g1 === toFlood.g && b1 === toFlood.b) {
             imageData.data[indexs] = color.r;
             imageData.data[indexs + 1] = color.g;
             imageData.data[indexs + 2] = color.b;
             imageData.data[indexs + 3] = 255;
 
             Stack.push({ x: points.x + 1, y: points.y });
-            Stack.push({ x: points.x, y: points.y + 1 });
             Stack.push({ x: points.x - 1, y: points.y });
+            Stack.push({ x: points.x, y: points.y + 1 });
             Stack.push({ x: points.x, y: points.y - 1 });
         }
     }
@@ -105,6 +93,8 @@ function floodFillStack(imageData, cnv, x, y, toFlood, color) {
 
 var imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
 var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
+var lives = 3;
+var gameOver = false;
 
 function drawBall(imageData, ball) {
     lingkaranPolar(imageData, ball.x, ball.y, ball.radius, 0, 0, 255);
@@ -120,13 +110,7 @@ function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY
         for (var c = 0; c < kolom; c++) {
             var x = (c * (lebar + jarakX)) + offsetX;
             var y = (r * (tinggi + jarakY)) + offsetY;
-            bricks[r][c] = {
-                x: x,
-                y: y,
-                width: lebar,
-                height: tinggi,
-                status: 1
-            };
+            bricks[r][c] = { x: x, y: y, width: lebar, height: tinggi, status: 1 };
         }
     }
     return bricks;
@@ -157,36 +141,63 @@ function gambarSemuaBalok(imageData, bricks, warna) {
 var bricks = buatBalok(5, 8, 80, 25, 10, 10, 40, 50);
 var warnaBalok = { r: 255, g: 0, b: 0 };
 
-function draw(ball) {
-    ctx.clearRect(0, 0, cnv.width, cnv.height);
-    drawBall(imageData, ball);
+var centerX = cnv.width / 2;
+var centerY = cnv.height / 1.1;
 
-    if (ball.x + ball.dx > cnv.width - ball.radius || ball.x + ball.dx < ball.radius) {
+function resetBall() {
+    ball.x = cnv.width / 2;
+    ball.y = cnv.height / 2;
+    ball.dx = 2;
+    ball.dy = -2;
+}
+
+function draw(ball) {
+    if (gameOver) return;
+
+    // Pergerakan bola
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Pantulan dinding
+    if (ball.x + ball.radius > cnv.width || ball.x - ball.radius < 0) {
         ball.dx = -ball.dx;
     }
-    if (ball.y + ball.dy > cnv.height - ball.radius || ball.y + ball.dy < ball.radius) {
+    if (ball.y - ball.radius < 0) {
         ball.dy = -ball.dy;
     }
 
-    // code buat bola mantul ke paddel
-    // cek tabrakan dengan paddle
+    // Paddle area
     var paddleTop = centerY - 5;
     var paddleBottom = centerY + 5;
     var paddleLeft = centerX - 60;
     var paddleRight = centerX + 60;
 
+    // Cek tabrakan bola dengan paddle
     if (
-        ball.y + ball.radius >= paddleTop &&    // bola menyentuh atas paddle
-        ball.y + ball.radius <= paddleBottom && // masih dalam area paddle
-        ball.x >= paddleLeft && ball.x <= paddleRight
+        ball.y + ball.radius >= paddleTop &&
+        ball.y + ball.radius <= paddleBottom &&
+        ball.x >= paddleLeft &&
+        ball.x <= paddleRight
     ) {
-        ball.dy = -Math.abs(ball.dy); // pantulkan ke atas
-        ball.y = paddleTop - ball.radius; // geser sedikit agar tidak tembus
+        ball.dy = -Math.abs(ball.dy);
+        ball.y = paddleTop - ball.radius;
     }
 
+    // Jika bola jatuh (tidak kena paddle)
+    if (ball.y + ball.radius > cnv.height) {
+        if (lives > 0) {
+            lives--; // kurangi nyawa
+            if (lives >= 0) {
+                resetBall(); // reset bola (masih bisa main meskipun nyawa 0)
+            }
+        } else {
+            // game berakhir ketika nyawa = 0
+            gameOver = true;
+            setTimeout(() => alert("Game Over! Klik OK untuk mengulang."), 50);
+            setTimeout(() => location.reload(), 500);
+        }
+    }
 
-    ball.x += ball.dx;
-    ball.y += ball.dy;
 }
 
 
@@ -195,33 +206,37 @@ function gameLoop() {
     imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
 
     gambarSemuaBalok(imageData, bricks, warnaBalok);
-
     draw(ball);
     drawBall(imageData, ball);
 
-    point_array = [{ x: centerX - 60, y: centerY - 5 }, { x: centerX + 60, y: centerY - 5 }, { x: centerX + 60, y: centerY + 5 }, { x: centerX - 60, y: centerY + 5 }];
+    // Paddle
+    var point_array = [
+        { x: centerX - 60, y: centerY - 5 },
+        { x: centerX + 60, y: centerY - 5 },
+        { x: centerX + 60, y: centerY + 5 },
+        { x: centerX - 60, y: centerY + 5 }
+    ];
     polygon(imageData, point_array, 255, 255, 0);
 
+    // Tampilkan nyawa
     ctx.putImageData(imageData, 0, 0);
-    requestAnimationFrame(gameLoop);
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "white";
+    ctx.fillText("Nyawa: " + lives, 20, 30);
+
+    if (!gameOver) requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
 
-
-var centerX = cnv.width / 2;
-var centerY = cnv.height / 1.1;
-
 addEventListener('keydown', function (ev) {
-    var step =15;
+    var step = 15;
     var batasPadel = 60;
-
-    if (ev.key == 'a' || ev.key == 'ArrowLeft') {   
+    if (ev.key == 'a' || ev.key == 'ArrowLeft') {
         if (centerX - batasPadel - step >= 0) {
             centerX -= step;
         }
-    }
-    else if (ev.key == 'd' || ev.key == 'ArrowRight') {
+    } else if (ev.key == 'd' || ev.key == 'ArrowRight') {
         if (centerX + batasPadel + step <= cnv.width) {
             centerX += step;
         }
