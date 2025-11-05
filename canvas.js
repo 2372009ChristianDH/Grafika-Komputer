@@ -96,13 +96,14 @@ var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
 var lives = 3;
 var gameOver = false;
 
+// Membuat Bola
 function drawBall(imageData, ball) {
     lingkaranPolar(imageData, ball.x, ball.y, ball.radius, 0, 0, 255);
     var toFlood = { r: 0, g: 0, b: 0 };
     var color = { r: 0, g: 0, b: 255 };
     floodFillStack(imageData, cnv, ball.x, ball.y, toFlood, color);
 }
-
+// Membuat Balok
 function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY) {
     var bricks = [];
     for (var r = 0; r < baris; r++) {
@@ -158,12 +159,29 @@ function draw(ball) {
     ball.x += ball.dx;
     ball.y += ball.dy;
 
-    // Pantulan dinding
+    // Pantulan
     if (ball.x + ball.radius > cnv.width || ball.x - ball.radius < 0) {
         ball.dx = -ball.dx;
     }
     if (ball.y - ball.radius < 0) {
         ball.dy = -ball.dy;
+    }
+    // Cek tabrakan bola dengan balok
+    for (var r = 0; r < bricks.length; r++) {
+        for (var c = 0; c < bricks[r].length; c++) {
+            var brick = bricks[r][c];
+            if (brick.status == 1) {
+                if (
+                    ball.x + ball.radius > brick.x &&
+                    ball.x - ball.radius < brick.x + brick.width &&
+                    ball.y + ball.radius > brick.y &&
+                    ball.y - ball.radius < brick.y + brick.height
+                ){
+                    ball.dy = -ball.dy;
+                    brick.status = 0;
+                }
+            }
+        }
     }
 
     // Paddle area
@@ -188,10 +206,9 @@ function draw(ball) {
         if (lives > 0) {
             lives--; // kurangi nyawa
             if (lives >= 0) {
-                resetBall(); // reset bola (masih bisa main meskipun nyawa 0)
+                resetBall(); 
             }
         } else {
-            // game berakhir ketika nyawa =
             gameOver = true;
             setTimeout(() => alert("Game Over! Klik OK untuk mengulang."), 50);
             setTimeout(() => location.reload(), 500);
