@@ -1,5 +1,10 @@
 var cnv = document.getElementById("gameCanvas");
 var ctx = cnv.getContext("2d");
+var imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
+var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
+var nyawa = 3;
+var gameOver = false;
+var controlGame = false;
 
 function gambar_titik(imageData, x, y, r, g, b) {
     var index = 4 * (Math.ceil(x) + (Math.ceil(y) * cnv.width));
@@ -91,19 +96,14 @@ function floodFillStack(imageData, cnv, x, y, toFlood, color) {
     }
 }
 
-var imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
-var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
-var lives = 3;
-var gameOver = false;
 
-// Membuat Bola
 function drawBall(imageData, ball) {
     lingkaranPolar(imageData, ball.x, ball.y, ball.radius, 0, 0, 255);
     var toFlood = { r: 0, g: 0, b: 0 };
     var color = { r: 0, g: 0, b: 255 };
     floodFillStack(imageData, cnv, ball.x, ball.y, toFlood, color);
 }
-// Membuat Balok
+
 function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY) {
     var bricks = [];
     for (var r = 0; r < baris; r++) {
@@ -118,13 +118,13 @@ function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY
 }
 
 function gambarBalok(imageData, brick, warna) {
-    var point_array = [
+    var point_array_balok = [
         { x: brick.x, y: brick.y },
         { x: brick.x + brick.width, y: brick.y },
         { x: brick.x + brick.width, y: brick.y + brick.height },
         { x: brick.x, y: brick.y + brick.height }
     ];
-    polygon(imageData, point_array, warna.r, warna.g, warna.b);
+    polygon(imageData, point_array_balok, warna.r, warna.g, warna.b);
     var toFlood = { r: 0, g: 0, b: 0 };
     floodFillStack(imageData, cnv, brick.x + 2, brick.y + 2, toFlood, warna);
 }
@@ -142,8 +142,6 @@ function gambarSemuaBalok(imageData, bricks, warna) {
 var bricks = buatBalok(5, 8, 80, 25, 10, 10, 40, 50);
 var warnaBalok = { r: 255, g: 0, b: 0 };
 
-var centerX = cnv.width / 2;
-var centerY = cnv.height / 1.1;
 
 function resetBall() {
     ball.x = cnv.width / 2;
@@ -152,31 +150,34 @@ function resetBall() {
     ball.dy = -2;
 }
 
+var centerX = cnv.width / 2;
+var centerY = cnv.height / 1.1;
+
 function draw(ball) {
     if (gameOver) return;
 
-    // Pergerakan bola
     ball.x += ball.dx;
     ball.y += ball.dy;
 
-    // Pantulan
     if (ball.x + ball.radius > cnv.width || ball.x - ball.radius < 0) {
         ball.dx = -ball.dx;
     }
     if (ball.y - ball.radius < 0) {
         ball.dy = -ball.dy;
     }
-    // Cek tabrakan bola dengan balok
+
+    var semuaBalokHancur = true;
     for (var r = 0; r < bricks.length; r++) {
         for (var c = 0; c < bricks[r].length; c++) {
             var brick = bricks[r][c];
             if (brick.status == 1) {
+                semuaBalokHancur = false;
                 if (
                     ball.x + ball.radius > brick.x &&
                     ball.x - ball.radius < brick.x + brick.width &&
                     ball.y + ball.radius > brick.y &&
                     ball.y - ball.radius < brick.y + brick.height
-                ){
+                ) {
                     ball.dy = -ball.dy;
                     brick.status = 0;
                 }
@@ -184,13 +185,17 @@ function draw(ball) {
         }
     }
 
-    // Paddle area
+    if (semuaBalokHancur) {
+        gameOver = true;
+        document.getElementById("winnerScreen").style.display = "flex";
+        return;
+    }
+
     var paddleTop = centerY - 5;
     var paddleBottom = centerY + 5;
     var paddleLeft = centerX - 60;
     var paddleRight = centerX + 60;
 
-    // Cek tabrakan bola dengan paddle
     if (
         ball.y + ball.radius >= paddleTop &&
         ball.y + ball.radius <= paddleBottom &&
@@ -201,23 +206,21 @@ function draw(ball) {
         ball.y = paddleTop - ball.radius;
     }
 
-    // Jika bola jatuh (tidak kena paddle)
+
     if (ball.y + ball.radius > cnv.height) {
-        if (lives > 0) {
-            lives--; // kurangi nyawa
-            if (lives >= 0) {
-                resetBall(); 
-            }
+        if (nyawa > 1) {
+            nyawa--;
+            resetBall();
         } else {
             gameOver = true;
-            setTimeout(() => alert("Game Over! Klik OK untuk mengulang."), 50);
-            setTimeout(() => location.reload(), 500);
+            document.getElementById("gameOverScreen").style.display = "flex";
         }
     }
 
 }
 
 
+var animasi = null;
 function gameLoop() {
     ctx.clearRect(0, 0, cnv.width, cnv.height);
     imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
@@ -227,25 +230,28 @@ function gameLoop() {
     drawBall(imageData, ball);
 
     // Paddle
-    var point_array = [
+    var point_array_padel = [
         { x: centerX - 60, y: centerY - 5 },
         { x: centerX + 60, y: centerY - 5 },
         { x: centerX + 60, y: centerY + 5 },
         { x: centerX - 60, y: centerY + 5 }
     ];
-    polygon(imageData, point_array, 255, 255, 0);
+    polygon(imageData, point_array_padel, 255, 255, 0);
 
     // Tampilkan nyawa
     ctx.putImageData(imageData, 0, 0);
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
-    ctx.fillText("Nyawa: " + lives, 20, 30);
+    ctx.fillText("nyawa: " + nyawa, 20, 30);
 
-    if (!gameOver) requestAnimationFrame(gameLoop);
+    if (controlGame && !gameOver) {
+        animasi = requestAnimationFrame(gameLoop);
+    }
 }
 
 gameLoop();
 
+var tambahNyawaDipakai = false;
 addEventListener('keydown', function (ev) {
     var step = 15;
     var batasPadel = 60;
@@ -258,4 +264,37 @@ addEventListener('keydown', function (ev) {
             centerX += step;
         }
     }
+
+
+    if (ev.key === 'Shift' && !tambahNyawaDipakai) {
+        if (nyawa < 3) {
+            nyawa++;
+            tambahNyawaDipakai = true;
+        }
+    }
+
+
 });
+
+
+document.getElementById("mulai").onclick = () => {
+    if (!controlGame && !gameOver) {
+        controlGame = true;
+        animasi = requestAnimationFrame(gameLoop);
+    }
+};
+document.getElementById("pause").onclick = () => {
+    controlGame = false;
+}
+document.getElementById("reset").onclick = () => {
+    controlGame = false;
+    location.reload();
+};
+document.getElementById("gameOver").onclick = () => {
+    controlGame = false;
+    location.reload();
+}
+document.getElementById("menang").onclick = () => {
+    controlGame = false;
+    location.reload();
+};
