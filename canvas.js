@@ -111,23 +111,46 @@ function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY
         for (var c = 0; c < kolom; c++) {
             var x = (c * (lebar + jarakX)) + offsetX;
             var y = (r * (tinggi + jarakY)) + offsetY;
-            bricks[r][c] = { x: x, y: y, width: lebar, height: tinggi, status: 1 };
+
+            // Tambahkan kemungkinan balok kuat
+            var chance = Math.random(); // 0 - 1
+            var tahanPukul = 1;
+            if (chance < 0.25) { // 25% kemungkinan jadi balok kuat
+                tahanPukul = 2 + Math.floor(Math.random() * 2); // bisa 2 atau 3 kali pukulan
+            }
+
+            bricks[r][c] = {
+                x: x,
+                y: y,
+                width: lebar,
+                height: tinggi,
+                status: 1,
+                tahanPukul: tahanPukul
+            };
         }
     }
     return bricks;
 }
 
+
 function gambarBalok(imageData, brick, warna) {
+    var warnaSekarang = { r: warna.r, g: warna.g, b: warna.b };
+
+    // Ubah warna tergantung ketahanan
+    if (brick.tahanPukul == 2) warnaSekarang = { r: 255, g: 165, b: 0 }; // oranye
+    else if (brick.tahanPukul >= 3) warnaSekarang = { r: 128, g: 0, b: 128 }; // ungu
+
     var point_array_balok = [
         { x: brick.x, y: brick.y },
         { x: brick.x + brick.width, y: brick.y },
         { x: brick.x + brick.width, y: brick.y + brick.height },
         { x: brick.x, y: brick.y + brick.height }
     ];
-    polygon(imageData, point_array_balok, warna.r, warna.g, warna.b);
+    polygon(imageData, point_array_balok, warnaSekarang.r, warnaSekarang.g, warnaSekarang.b);
     var toFlood = { r: 0, g: 0, b: 0 };
-    floodFillStack(imageData, cnv, brick.x + 2, brick.y + 2, toFlood, warna);
+    floodFillStack(imageData, cnv, brick.x + 2, brick.y + 2, toFlood, warnaSekarang);
 }
+
 
 function gambarSemuaBalok(imageData, bricks, warna) {
     for (var r = 0; r < bricks.length; r++) {
@@ -179,8 +202,16 @@ function draw(ball) {
                     ball.y - ball.radius < brick.y + brick.height
                 ) {
                     ball.dy = -ball.dy;
-                    brick.status = 0;
+
+                    // Kurangi ketahanan
+                    brick.tahanPukul--;
+
+                    // Jika sudah habis ketahanannya, baru hancur
+                    if (brick.tahanPukul <= 0) {
+                        brick.status = 0;
+                    }
                 }
+
             }
         }
     }
