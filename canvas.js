@@ -2,9 +2,6 @@ var cnv = document.getElementById("gameCanvas");
 var ctx = cnv.getContext("2d");
 var imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
 var ball = { x: 400, y: 300, radius: 7, dx: 2, dy: -2 };
-var nyawa = 3;
-var gameOver = false;
-var controlGame = false;
 
 function gambar_titik(imageData, x, y, r, g, b) {
     var index = 4 * (Math.ceil(x) + (Math.ceil(y) * cnv.width));
@@ -48,6 +45,7 @@ function dda_line(imageData, x1, y1, x2, y2, r, g, b) {
     }
 }
 
+
 function lingkaranPolar(imageData, xc, yc, radius, r, g, b) {
     for (var theta = 0; theta < Math.PI * 6; theta += 0.005) {
         var x = xc + (radius * Math.cos(theta));
@@ -55,6 +53,7 @@ function lingkaranPolar(imageData, xc, yc, radius, r, g, b) {
         gambar_titik(imageData, x, y, r, g, b);
     }
 }
+
 
 function polygon(imageData, point_array, r, g, b) {
     for (var i = 0; i < point_array.length - 1; i++) {
@@ -70,6 +69,7 @@ function polygon(imageData, point_array, r, g, b) {
     var y2 = point_array[0].y;
     dda_line(imageData, x1, y1, x2, y2, r, g, b);
 }
+
 
 function floodFillStack(imageData, cnv, x, y, toFlood, color) {
     var Stack = [];
@@ -104,6 +104,7 @@ function drawBall(imageData, ball) {
     floodFillStack(imageData, cnv, ball.x, ball.y, toFlood, color);
 }
 
+
 function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY) {
     var bricks = [];
     for (var r = 0; r < baris; r++) {
@@ -111,23 +112,40 @@ function buatBalok(baris, kolom, lebar, tinggi, jarakX, jarakY, offsetX, offsetY
         for (var c = 0; c < kolom; c++) {
             var x = (c * (lebar + jarakX)) + offsetX;
             var y = (r * (tinggi + jarakY)) + offsetY;
-            bricks[r][c] = { x: x, y: y, width: lebar, height: tinggi, status: 1 };
+
+            var chance = Math.random();
+            var nyawaBalok = 1;
+            if (chance < 0.25) {
+                nyawaBalok = 2 + Math.floor(Math.random() * 2);
+            }
+
+            bricks[r][c] = {x: x, y: y, width: lebar, height: tinggi, status: 1, nyawaBalok: nyawaBalok};
         }
     }
     return bricks;
 }
 
+
 function gambarBalok(imageData, brick, warna) {
+    var warnaTerbaru = { r: warna.r, g: warna.g, b: warna.b };
+
+    if (brick.nyawaBalok == 2) {
+        warnaTerbaru = { r: 255, g: 165, b: 0 };
+    } else if (brick.nyawaBalok >= 3){
+        warnaTerbaru = { r: 128, g: 0, b: 128 };  
+    } 
+
     var point_array_balok = [
         { x: brick.x, y: brick.y },
         { x: brick.x + brick.width, y: brick.y },
         { x: brick.x + brick.width, y: brick.y + brick.height },
         { x: brick.x, y: brick.y + brick.height }
     ];
-    polygon(imageData, point_array_balok, warna.r, warna.g, warna.b);
+    polygon(imageData, point_array_balok, warnaTerbaru.r, warnaTerbaru.g, warnaTerbaru.b);
     var toFlood = { r: 0, g: 0, b: 0 };
-    floodFillStack(imageData, cnv, brick.x + 2, brick.y + 2, toFlood, warna);
+    floodFillStack(imageData, cnv, brick.x + 2, brick.y + 2, toFlood, warnaTerbaru);
 }
+
 
 function gambarSemuaBalok(imageData, bricks, warna) {
     for (var r = 0; r < bricks.length; r++) {
@@ -139,9 +157,6 @@ function gambarSemuaBalok(imageData, bricks, warna) {
     }
 }
 
-var bricks = buatBalok(5, 8, 80, 25, 10, 10, 40, 50);
-var warnaBalok = { r: 255, g: 0, b: 0 };
-
 
 function resetBall() {
     ball.x = cnv.width / 2;
@@ -150,9 +165,12 @@ function resetBall() {
     ball.dy = -2;
 }
 
+
 var centerX = cnv.width / 2;
 var centerY = cnv.height / 1.1;
-
+var nyawa = 3;
+var bricks = buatBalok(5, 8, 80, 25, 10, 10, 40, 50);
+var gameOver = false;
 function draw(ball) {
     if (gameOver) return;
 
@@ -179,8 +197,14 @@ function draw(ball) {
                     ball.y - ball.radius < brick.y + brick.height
                 ) {
                     ball.dy = -ball.dy;
-                    brick.status = 0;
+
+                    brick.nyawaBalok--;
+
+                    if (brick.nyawaBalok <= 0) {
+                        brick.status = 0;
+                    }
                 }
+
             }
         }
     }
@@ -196,12 +220,7 @@ function draw(ball) {
     var paddleLeft = centerX - 60;
     var paddleRight = centerX + 60;
 
-    if (
-        ball.y + ball.radius >= paddleTop &&
-        ball.y + ball.radius <= paddleBottom &&
-        ball.x >= paddleLeft &&
-        ball.x <= paddleRight
-    ) {
+    if (ball.y + ball.radius >= paddleTop && ball.y + ball.radius <= paddleBottom && ball.x >= paddleLeft && ball.x <= paddleRight) {
         ball.dy = -Math.abs(ball.dy);
         ball.y = paddleTop - ball.radius;
     }
@@ -210,8 +229,11 @@ function draw(ball) {
     if (ball.y + ball.radius > cnv.height) {
         if (nyawa > 1) {
             nyawa--;
+            document.getElementById("nyawaDisplay").innerText = "❤️".repeat(nyawa);
             resetBall();
         } else {
+            nyawa = 0;
+            document.getElementById("nyawaDisplay").innerText = "";
             gameOver = true;
             document.getElementById("gameOverScreen").style.display = "flex";
         }
@@ -221,6 +243,8 @@ function draw(ball) {
 
 
 var animasi = null;
+var warnaBalok = { r: 255, g: 0, b: 0 };
+var controlGame = false;
 function gameLoop() {
     ctx.clearRect(0, 0, cnv.width, cnv.height);
     imageData = ctx.getImageData(0, 0, cnv.width, cnv.height);
@@ -229,20 +253,10 @@ function gameLoop() {
     draw(ball);
     drawBall(imageData, ball);
 
-    // Paddle
-    var point_array_padel = [
-        { x: centerX - 60, y: centerY - 5 },
-        { x: centerX + 60, y: centerY - 5 },
-        { x: centerX + 60, y: centerY + 5 },
-        { x: centerX - 60, y: centerY + 5 }
-    ];
+    var point_array_padel = [{ x: centerX - 60, y: centerY - 5 }, { x: centerX + 60, y: centerY - 5 }, { x: centerX + 60, y: centerY + 5 }, { x: centerX - 60, y: centerY + 5 }];
     polygon(imageData, point_array_padel, 255, 255, 0);
 
-    // Tampilkan nyawa
     ctx.putImageData(imageData, 0, 0);
-    ctx.font = "20px Arial";
-    ctx.fillStyle = "white";
-    ctx.fillText("nyawa: " + nyawa, 20, 30);
 
     if (controlGame && !gameOver) {
         animasi = requestAnimationFrame(gameLoop);
@@ -264,7 +278,6 @@ addEventListener('keydown', function (ev) {
             centerX += step;
         }
     }
-
 
     if (ev.key === 'Shift' && !tambahNyawaDipakai) {
         if (nyawa < 3) {
